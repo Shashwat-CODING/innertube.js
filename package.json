@@ -1,6 +1,6 @@
 {
   "name": "innertube.js",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "description": "A lightweight library to interact with YouTube API using InnerTube.",
   "main": "src/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Scodify236/innertube.git"
+    "url": "git+https://github.com/Shashwat-CODING/innertube.js.git"
   },
   "keywords": [
     "youtube",
@@ -17,8 +17,5 @@
   ],
   "author": "Shashwat",
   "license": "MIT",
-  "homepage": "scoderportfolio.netlify.app",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
+  "homepage": "scoderportfolio.netlify.app"
 }

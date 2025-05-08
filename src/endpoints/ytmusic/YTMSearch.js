@@ -3,36 +3,33 @@ class YTMSearch {
     this.client = client;
   }
 
-  async search(options = {}) {
-    const { query, filter = 'all', continuation } = options;
-    const params = this.getFilterParams(filter);
-    
-    const payload = {
+  async search({ query, filter = 'all', continuation }) {
+    if (!query && !continuation) {
+      throw new Error('Query is required for search');
+    }
+
+    const data = {
       ...this.client.getContextPayload(),
-      query: query || '',
-      params: params,
-      continuation: continuation
+      query,
+      params: this._getFilterParams(filter),
+      ...(continuation && { continuation })
     };
 
-    return this.client.makeRequest('search', payload);
+    const response = await this.client.makeRequest('search', data);
+    return response;
   }
 
-  getFilterParams(filter) {
-    switch (filter.toLowerCase()) {
-      case 'song':
-        return 'EgWKAQIIAWoKEAMQBBAJEAoQBQ%3D%3D';
-      case 'video':
-        return 'EgWKAQIQAWoKEAMQBBAJEAoQBQ%3D%3D';
-      case 'album':
-        return 'EgWKAQIYAWoKEAMQBBAJEAoQBQ%3D%3D';
-      case 'artist':
-        return 'EgWKAQIgAWoKEAMQBBAJEAoQBQ%3D%3D';
-      case 'playlist':
-        return 'EgWKAQIoAWoKEAMQBBAJEAoQBQ%3D%3D';
-      case 'all':
-      default:
-        return 'EgWKAQQoAWoKEAMQBBAJEAoQBQ%3D%3D';
-    }
+  _getFilterParams(filter) {
+    const filters = {
+      'song': 'RAAGAggBKgQQAxAB',
+      'video': 'RAAGAggBKgQQBAEB',
+      'album': 'RAAGAggBKgQQBBAB',
+      'artist': 'RAAGAggBKgQQBhAB',
+      'playlist': 'RAAGAggBKgQQBxAB',
+      'all': ''
+    };
+
+    return filters[filter.toLowerCase()] || '';
   }
 }
 

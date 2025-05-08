@@ -1,136 +1,8 @@
 const InnerTube = require('./src/index.js');
 const util = require('util');
-const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
 
 // Initialize InnerTube instance
 const yt = new InnerTube();
-const app = express();
-
-// Middleware
-app.use(express.json());
-
-// Serve static HTML
-app.get('/', async (req, res) => {
-  try {
-    const html = await fs.readFile(path.join(__dirname, 'test.html'), 'utf-8');
-    res.type('html').send(html);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// API Routes
-app.get('/api/search', async (req, res) => {
-  try {
-    const result = await yt.search({
-      query: req.query.q,
-      filter: req.query.filter || 'all'
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/player', async (req, res) => {
-  try {
-    const result = await yt.player({
-      videoId: req.query.v
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/browse', async (req, res) => {
-  try {
-    const result = await yt.browse({
-      browseId: req.query.id
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/playlist', async (req, res) => {
-  try {
-    const playlistId = req.query.id;
-    if (!playlistId) {
-      return res.status(400).json({ error: 'Playlist ID is required' });
-    }
-    const result = await yt.getPlaylist({
-      playlistId: playlistId.replace('VL', '')
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/channel', async (req, res) => {
-  try {
-    const result = await yt.getChannel({
-      channelId: req.query.id
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add new YTMusic routes
-app.get('/api/ytm/search', async (req, res) => {
-  try {
-    const result = await yt.ytmSearch({
-      query: req.query.q,
-      filter: req.query.filter || 'all'
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/ytm/browse', async (req, res) => {
-  try {
-    const result = await yt.ytmBrowse({
-      browseId: req.query.id
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/ytm/home', async (req, res) => {
-  try {
-    const result = await yt.ytmGetHomeData();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: err.message });
-});
-
-// Start server and run tests
-const PORT = 31000;
-app.listen(PORT, async () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
-  try {
-    await runTests();
-  } catch (error) {
-    console.error('Test suite error:', error);
-  }
-});
 
 // Helper function for pretty printing
 function prettyPrint(obj) {
@@ -140,6 +12,14 @@ function prettyPrint(obj) {
     maxArrayLength: 10
   });
 }
+
+// Test results tracking
+const testResults = {
+  total: 0,
+  passed: 0,
+  failed: 0,
+  details: []
+};
 
 // Run tests function
 async function runTests() {
@@ -160,9 +40,14 @@ async function runTests() {
     
     // Optional: Log some specific details
     console.log('Video Title:', playerInfo.videoDetails?.title || 'N/A');
+    testResults.passed++;
+    testResults.details.push({ name: 'Player Information', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Player Information Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Player Information', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
   // Test 2: Search Functionality
   try {
@@ -178,9 +63,14 @@ async function runTests() {
     console.log(prettyPrint(searchResults));
     
     console.log('Number of Results:', searchResults.contents?.length || 0);
+    testResults.passed++;
+    testResults.details.push({ name: 'Search Functionality', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Search Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Search Functionality', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
   // Test 3: Browse Functionality
   try {
@@ -194,9 +84,14 @@ async function runTests() {
     console.log('✅ Browse Recommendations Fetched');
     console.log('Full Browse Response:');
     console.log(prettyPrint(browseResults));
+    testResults.passed++;
+    testResults.details.push({ name: 'Browse Functionality', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Browse Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Browse Functionality', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
   // Test 4: Next/Related Content
   try {
@@ -210,16 +105,20 @@ async function runTests() {
     console.log('✅ Related Content Fetched Successfully');
     console.log('Full Related Content Response:');
     console.log(prettyPrint(relatedContent));
+    testResults.passed++;
+    testResults.details.push({ name: 'Related Content', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Related Content Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Related Content', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
   // Test 5: Playlist Information
   try {
     console.log('\n[TEST 5] Fetching Playlist Information');
-    // Using a public playlist ID for testing
     const playlistInfo = await yt.getPlaylist({ 
-      playlistId: 'PLDoPjvoNmBAw_t_XWUFbBX-c9MafPk9ji'  // Changed to a known working playlist
+      playlistId: 'PLDoPjvoNmBAw_t_XWUFbBX-c9MafPk9ji'
     });
     
     if (!playlistInfo || !playlistInfo.header) {
@@ -230,9 +129,14 @@ async function runTests() {
     console.log('Playlist Title:', playlistInfo.header?.playlistHeaderRenderer?.title?.runs?.[0]?.text || 'N/A');
     console.log('Full Playlist Response:');
     console.log(prettyPrint(playlistInfo));
+    testResults.passed++;
+    testResults.details.push({ name: 'Playlist Information', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Playlist Information Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Playlist Information', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
   // Test 6: Channel Information
   try {
@@ -246,32 +150,163 @@ async function runTests() {
     console.log('✅ Channel Info Fetched Successfully');
     console.log('Full Channel Response:');
     console.log(prettyPrint(channelInfo));
+    testResults.passed++;
+    testResults.details.push({ name: 'Channel Information', status: 'PASSED' });
   } catch (error) {
     console.error('❌ Channel Information Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Channel Information', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
-  // Test 7: YTMusic Search
+  // Test 7: Comments
   try {
-    console.log('\n[TEST 7] YTMusic Search');
+    console.log('\n[TEST 7] Fetching Video Comments');
+    const comments = await yt.getComments({ videoId: 'dQw4w9WgXcQ' });
+    
+    if (!comments) {
+      throw new Error('No comments received');
+    }
+    
+    console.log('✅ Comments Fetched Successfully');
+    console.log('Full Comments Response:');
+    console.log(prettyPrint(comments));
+    testResults.passed++;
+    testResults.details.push({ name: 'Comments', status: 'PASSED' });
+  } catch (error) {
+    console.error('❌ Comments Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Comments', status: 'FAILED', error: error.message });
+  }
+  testResults.total++;
+
+  // Test 8: Captions
+  try {
+    console.log('\n[TEST 8] Fetching Video Captions');
+    const captions = await yt.getCaptions({ videoId: 'dQw4w9WgXcQ' });
+    
+    if (!captions) {
+      throw new Error('No captions received');
+    }
+    
+    console.log('✅ Captions Fetched Successfully');
+    console.log('Available Caption Tracks:', captions.length);
+    console.log(prettyPrint(captions));
+    testResults.passed++;
+    testResults.details.push({ name: 'Captions', status: 'PASSED' });
+  } catch (error) {
+    console.error('❌ Captions Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'Captions', status: 'FAILED', error: error.message });
+  }
+  testResults.total++;
+
+  // Test 9: YTMusic Search
+  try {
+    console.log('\n[TEST 9] YTMusic Search');
     const ytmResults = await yt.ytmSearch({ 
       query: 'The Weeknd',
       filter: 'song'
     });
-    console.log('✅ YTMusic Search Completed');
+    
+    if (!ytmResults) {
+      throw new Error('No YTMusic search results received');
+    }
+    
+    console.log('✅ YTMusic Search Completed Successfully');
+    console.log('Full YTMusic Search Response:');
     console.log(prettyPrint(ytmResults));
+    testResults.passed++;
+    testResults.details.push({ name: 'YTMusic Search', status: 'PASSED' });
   } catch (error) {
-    console.error('❌ YTMusic Search Failed:', error.message);
+    console.error('❌ YTMusic Search Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'YTMusic Search', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
-  // Test 8: YTMusic Browse
+  // Test 10: YTMusic Home
   try {
-    console.log('\n[TEST 8] YTMusic Home');
+    console.log('\n[TEST 10] YTMusic Home Data');
     const ytmHome = await yt.ytmGetHomeData();
-    console.log('✅ YTMusic Home Fetched');
+    
+    if (!ytmHome) {
+      throw new Error('No YTMusic home data received');
+    }
+    
+    console.log('✅ YTMusic Home Data Fetched Successfully');
+    console.log('Full YTMusic Home Response:');
     console.log(prettyPrint(ytmHome));
+    testResults.passed++;
+    testResults.details.push({ name: 'YTMusic Home', status: 'PASSED' });
   } catch (error) {
-    console.error('❌ YTMusic Home Failed:', error.message);
+    console.error('❌ YTMusic Home Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'YTMusic Home', status: 'FAILED', error: error.message });
   }
+  testResults.total++;
 
-  console.log('\n🏁 All Tests Completed');
+  // Test 11: YTMusic Lyrics
+  try {
+    console.log('\n[TEST 11] YTMusic Lyrics');
+    const lyrics = await yt.ytmGetLyrics('MPREb_4pL8gzRtw1p');
+    
+    if (!lyrics) {
+      throw new Error('No lyrics received');
+    }
+    
+    console.log('✅ YTMusic Lyrics Fetched Successfully');
+    console.log('Full Lyrics Response:');
+    console.log(prettyPrint(lyrics));
+    testResults.passed++;
+    testResults.details.push({ name: 'YTMusic Lyrics', status: 'PASSED' });
+  } catch (error) {
+    console.error('❌ YTMusic Lyrics Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'YTMusic Lyrics', status: 'FAILED', error: error.message });
+  }
+  testResults.total++;
+
+  // Test 12: YTMusic Mood Categories
+  try {
+    console.log('\n[TEST 12] YTMusic Mood Categories');
+    const moods = await yt.ytmGetMoodCategories();
+    
+    if (!moods) {
+      throw new Error('No mood categories received');
+    }
+    
+    console.log('✅ YTMusic Mood Categories Fetched Successfully');
+    console.log('Full Mood Categories Response:');
+    console.log(prettyPrint(moods));
+    testResults.passed++;
+    testResults.details.push({ name: 'YTMusic Mood Categories', status: 'PASSED' });
+  } catch (error) {
+    console.error('❌ YTMusic Mood Categories Test Failed:', error.message);
+    testResults.failed++;
+    testResults.details.push({ name: 'YTMusic Mood Categories', status: 'FAILED', error: error.message });
+  }
+  testResults.total++;
+
+  // Print test report
+  console.log('\n📊 Test Report');
+  console.log('=============');
+  console.log(`Total Tests: ${testResults.total}`);
+  console.log(`Passed: ${testResults.passed}`);
+  console.log(`Failed: ${testResults.failed}`);
+  console.log('\nDetailed Results:');
+  testResults.details.forEach((test, index) => {
+    const status = test.status === 'PASSED' ? '✅' : '❌';
+    console.log(`${index + 1}. ${test.name}: ${status}`);
+    if (test.error) {
+      console.log(`   Error: ${test.error}`);
+    }
+  });
+  console.log('\n=============');
 }
+
+// Run the tests
+runTests().catch(error => {
+  console.error('Test suite error:', error);
+  process.exit(1);
+});
